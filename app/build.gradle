@@ -7,7 +7,7 @@ android {
     buildToolsVersion "30.0.2"
 
     defaultConfig {
-        applicationId "com.example.project_12_sm_optimizing_energy_consumption"
+        applicationId "pl.edu.agh.sm.project12"
         minSdkVersion 25
         targetSdkVersion 30
         versionCode 1

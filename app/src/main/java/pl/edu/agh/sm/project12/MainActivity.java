@@ -1,4 +1,4 @@
-package com.example.project_12_sm_optimizing_energy_consumption;
+package pl.edu.agh.sm.project12;
 
 import androidx.appcompat.app.AppCompatActivity;
 
