@@ -1,4 +1,4 @@
-package com.example.project_12_sm_optimizing_energy_consumption;
+package pl.edu.agh.sm.project12;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -10,8 +10,8 @@ import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.example.project_12_sm_optimizing_energy_consumption.ocr.FaceDetectionOcr;
-import com.example.project_12_sm_optimizing_energy_consumption.ocr.TextRecognitionOcr;
+import pl.edu.agh.sm.project12.ocr.FaceDetectionOcr;
+import pl.edu.agh.sm.project12.ocr.TextRecognitionOcr;
 import com.google.android.gms.tasks.Task;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.face.Face;

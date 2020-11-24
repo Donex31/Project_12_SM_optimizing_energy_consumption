@@ -1,4 +1,4 @@
-package com.example.project_12_sm_optimizing_energy_consumption.ocr;
+package pl.edu.agh.sm.project12.ocr;
 
 import com.google.android.gms.tasks.Task;
 import com.google.mlkit.vision.common.InputImage;
