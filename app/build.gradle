@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "pl.edu.agh.sm.project12"
-        minSdkVersion 25
+        minSdkVersion 26
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"
@@ -34,6 +34,8 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'com.google.android.material:material:1.2.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.3'
+    implementation 'com.google.android.gms:play-services-mlkit-text-recognition:16.1.1'
+    implementation 'com.google.mlkit:face-detection:16.0.2'
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
