@@ -22,7 +22,7 @@ public class BatteryConsumptionMonitor {
     private BatteryConsumptionListener listener = null;
     private ScheduledFuture<?> scheduled;
 
-    BatteryConsumptionMonitor(BatteryManager batteryManager, Duration samplingPeriod) {
+    public BatteryConsumptionMonitor(BatteryManager batteryManager, Duration samplingPeriod) {
         super();
         this.batteryManager = batteryManager;
         this.samplingPeriod = samplingPeriod;
