@@ -7,11 +7,10 @@
     tools:context="pl.edu.agh.sm.project12.MainActivity">
 
     <Button
-        android:id="@+id/button"
+        android:id="@+id/textRecognitionCloudButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="testConnection"
-        android:text="Test connection to google cloud"
+        android:text="Start Cloud OCR"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -23,10 +22,12 @@
         android:layout_height="wrap_content"
         android:onClick="recognizeText"
         android:text="Start OCR"
-        app:layout_constraintBottom_toTopOf="@+id/button"
+        app:layout_constraintBottom_toTopOf="@+id/textRecognitionCloudButton"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.81" />
 
     <TextView
         android:id="@+id/textView"
