@@ -117,6 +117,7 @@ public class DataCollectionActivity extends AppCompatActivity {
 
     private void startDataCollection(TaskData data) {
         Data inputData = new Data.Builder()
+                .putString(DataCollectionWorker.KEY_NAME, data.getName())
                 .putInt(DataCollectionWorker.KEY_ITERATIONS, data.getIterations())
                 .build();
         WorkContinuation workContinuation = WorkManager.getInstance(getApplicationContext())
