@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+
 import android.Manifest;
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -14,13 +15,23 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.content.Intent;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import pl.edu.agh.sm.project12.datacollection.DataCollectionActivity;
 
 import pl.edu.agh.sm.project12.ocr.FaceDetectionOcr;
 import pl.edu.agh.sm.project12.ocr.TextRecognitionOcr;
@@ -292,5 +303,9 @@ public class MainActivity extends AppCompatActivity {
     public void onTokenReceived(String token){
         accessToken = token;
         launchImagePicker();
+    public void openDataCollectionActivity(View view) {
+        Intent intent = new Intent(this, DataCollectionActivity.class);
+        startActivity(intent);
+
     }
 }

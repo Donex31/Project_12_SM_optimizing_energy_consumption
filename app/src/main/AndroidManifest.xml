@@ -12,13 +12,19 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Project_12_SM_optimizing_energy_consumption">
-        <activity android:name="pl.edu.agh.sm.project12.MainActivity">
+        <activity android:name=".datacollection.StartDataCollectionActivity"></activity>
+        <activity
+            android:name=".datacollection.DataCollectionActivity"
+            android:label="@string/title_activity_data_collection"
+            android:theme="@style/Theme.Project_12_SM_optimizing_energy_consumption.NoActionBar" />
+        <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <meta-data
             android:name="com.google.mlkit.vision.DEPENDENCIES"
             android:value="ocr,face" />
