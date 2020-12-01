@@ -300,9 +300,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void onTokenReceived(String token){
+    public void onTokenReceived(String token) {
         accessToken = token;
         launchImagePicker();
+    }
+
     public void openDataCollectionActivity(View view) {
         Intent intent = new Intent(this, DataCollectionActivity.class);
         startActivity(intent);
