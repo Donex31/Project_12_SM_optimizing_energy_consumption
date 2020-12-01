@@ -47,6 +47,10 @@ public class BatteryConsumptionMonitor {
         }
         scheduled.cancel(false);
         scheduled = null;
+
+        if (listener != null) {
+            listener.onStop(mAh);
+        }
     }
 
     private void sample() {
