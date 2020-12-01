@@ -2,14 +2,18 @@ package pl.edu.agh.sm.project12;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+
+import pl.edu.agh.sm.project12.datacollection.DataCollectionActivity;
 import pl.edu.agh.sm.project12.ocr.FaceDetectionOcr;
 import pl.edu.agh.sm.project12.ocr.TextRecognitionOcr;
 import com.google.android.gms.tasks.Task;
@@ -80,5 +84,8 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-
+    public void openDataCollectionActivity(View view) {
+        Intent intent = new Intent(this, DataCollectionActivity.class);
+        startActivity(intent);
+    }
 }
