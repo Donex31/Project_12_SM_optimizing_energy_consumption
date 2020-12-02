@@ -3,72 +3,36 @@ package pl.edu.agh.sm.project12;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-
-
 import android.Manifest;
 import android.accounts.Account;
 import android.accounts.AccountManager;
-import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.net.Uri;
-import android.os.AsyncTask;
-import android.content.Intent;
 import android.os.Bundle;
-import android.provider.MediaStore;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
-
 import pl.edu.agh.sm.project12.datacollection.DataCollectionActivity;
-
 import pl.edu.agh.sm.project12.ocr.FaceDetectionOcr;
 import pl.edu.agh.sm.project12.ocr.TextRecognitionOcr;
-import com.google.android.gms.tasks.Task;
+
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.face.Face;
 import com.google.mlkit.vision.text.Text;
 
-
+import com.google.android.gms.tasks.Task;
 import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.common.AccountPicker;
-import com.google.api.client.extensions.android.http.AndroidHttp;
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.api.client.googleapis.json.GoogleJsonResponseException;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.gson.GsonFactory;
-import com.google.api.services.vision.v1.Vision;
-import com.google.api.services.vision.v1.model.AnnotateImageRequest;
-import com.google.api.services.vision.v1.model.BatchAnnotateImagesRequest;
-import com.google.api.services.vision.v1.model.BatchAnnotateImagesResponse;
-import com.google.api.services.vision.v1.model.EntityAnnotation;
-import com.google.api.services.vision.v1.model.Feature;
-import com.google.api.services.vision.v1.model.Image;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    private final String TAG = "CloudTextRecognitionOcr";
-    static final int REQUEST_GALLERY_IMAGE = 100;
     static final int REQUEST_CODE_PICK_ACCOUNT = 101;
     static final int REQUEST_ACCOUNT_AUTHORIZATION = 102;
     static final int REQUEST_PERMISSIONS = 13;
@@ -94,7 +58,6 @@ public class MainActivity extends AppCompatActivity {
                 new String[]{Manifest.permission.GET_ACCOUNTS},
                 REQUEST_PERMISSIONS));
     }
-
 
 
     public void recognizeText(View view) {
@@ -133,14 +96,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void launchImagePicker() {
-        Intent intent = new Intent();
-        intent.setType("image/*");
-        intent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(Intent.createChooser(intent, "Select an image"),
-                REQUEST_GALLERY_IMAGE);
-    }
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
@@ -158,9 +113,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_GALLERY_IMAGE && resultCode == RESULT_OK && data != null) {
-            performCloudVisionRequest(data.getData());
-        } else if (requestCode == REQUEST_CODE_PICK_ACCOUNT) {
+        if (requestCode == REQUEST_CODE_PICK_ACCOUNT) {
             if (resultCode == RESULT_OK) {
                 String email = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
                 AccountManager am = AccountManager.get(this);
@@ -187,102 +140,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void performCloudVisionRequest(Uri uri) {
-        if (uri != null) {
-            try {
-                Bitmap bitmap = Bitmap.createBitmap(
-                        MediaStore.Images.Media.getBitmap(getContentResolver(), uri));
-                callCloudVision(bitmap);
-            } catch (IOException e) {
-                Log.e(TAG, e.getMessage());
-            }
-        }
-    }
-
-    @SuppressLint("StaticFieldLeak")
-    private void callCloudVision(final Bitmap bitmap) throws IOException {
-        mProgressDialog = ProgressDialog.show(this, null,"Scanning image with Vision API...", true);
-
-        new AsyncTask<Object, Void, BatchAnnotateImagesResponse>() {
-            @Override
-            protected BatchAnnotateImagesResponse doInBackground(Object... params) {
-                try {
-                    GoogleCredential credential = new GoogleCredential().setAccessToken(accessToken);
-                    HttpTransport httpTransport = AndroidHttp.newCompatibleTransport();
-                    JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
-
-                    Vision.Builder builder = new Vision.Builder
-                            (httpTransport, jsonFactory, credential);
-                    Vision vision = builder.build();
-
-                    List<Feature> featureList = new ArrayList<>();
-
-                    Feature textDetection = new Feature();
-                    textDetection.setType("TEXT_DETECTION");
-                    textDetection.setMaxResults(10);
-                    featureList.add(textDetection);
-
-                    List<AnnotateImageRequest> imageList = new ArrayList<>();
-                    AnnotateImageRequest annotateImageRequest = new AnnotateImageRequest();
-                    Image base64EncodedImage = getBase64EncodedJpeg(bitmap);
-                    annotateImageRequest.setImage(base64EncodedImage);
-                    annotateImageRequest.setFeatures(featureList);
-                    imageList.add(annotateImageRequest);
-
-                    BatchAnnotateImagesRequest batchAnnotateImagesRequest =
-                            new BatchAnnotateImagesRequest();
-                    batchAnnotateImagesRequest.setRequests(imageList);
-
-                    Vision.Images.Annotate annotateRequest =
-                            vision.images().annotate(batchAnnotateImagesRequest);
-                    annotateRequest.setDisableGZipContent(true);
-                    Log.d(TAG, "Sending request to Google Cloud");
-
-                    return annotateRequest.execute();
-
-                } catch (GoogleJsonResponseException e) {
-                    Log.e(TAG, "Request error: " + e.getContent());
-                } catch (IOException e) {
-                    Log.d(TAG, "Request error: " + e.getMessage());
-                }
-                return null;
-            }
-
-            protected void onPostExecute(BatchAnnotateImagesResponse response) {
-                mProgressDialog.dismiss();
-                textView.setText(getDetectedTexts(response));
-            }
-
-        }.execute();
-    }
-
-
-    private String getDetectedTexts(BatchAnnotateImagesResponse response){
-        StringBuilder message = new StringBuilder("");
-        List<EntityAnnotation> texts = response.getResponses().get(0)
-                .getTextAnnotations();
-        if (texts != null) {
-            for (EntityAnnotation text : texts) {
-                message.append(String.format(Locale.getDefault(), "%s: %s",
-                        text.getLocale(), text.getDescription()));
-                message.append("\n");
-            }
-        } else {
-            message.append("nothing\n");
-        }
-
-        return message.toString();
-    }
-
-    public Image getBase64EncodedJpeg(Bitmap bitmap) {
-        Image image = new Image();
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, byteArrayOutputStream);
-        byte[] imageBytes = byteArrayOutputStream.toByteArray();
-        image.encodeContent(imageBytes);
-        return image;
-    }
-
     private void pickUserAccount() {
         String[] accountTypes = new String[]{GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE};
         Intent intent = AccountPicker.newChooseAccountIntent(null, null,
@@ -302,12 +159,11 @@ public class MainActivity extends AppCompatActivity {
 
     public void onTokenReceived(String token) {
         accessToken = token;
-        launchImagePicker();
+        //textView.setText("Authorization was successful!!!");
     }
 
     public void openDataCollectionActivity(View view) {
         Intent intent = new Intent(this, DataCollectionActivity.class);
         startActivity(intent);
-
     }
 }
