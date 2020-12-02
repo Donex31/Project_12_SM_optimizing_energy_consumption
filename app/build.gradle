@@ -16,6 +16,10 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    configurations{
+        all*.exclude group: 'com.google.guava', module: 'listenablefuture'
+    }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -40,9 +44,11 @@ dependencies {
     // Google Cloud Vision API
     implementation 'com.google.android.gms:play-services-base:17.5.0'
     implementation 'com.google.android.gms:play-services-auth:19.0.0'
-    implementation 'com.google.apis:google-api-services-vision:v1-rev16-1.22.0'
+    implementation ('com.google.apis:google-api-services-vision:v1-rev16-1.22.0'){
+        exclude group: 'com.google.guava', module: 'listenablefuture'
+    }
     implementation ('com.google.api-client:google-api-client-android:1.22.0') {
-        exclude module: 'httpclient'
+        exclude group: 'com.google.guava', module: 'listenablefuture'
     }
     implementation ('com.google.http-client:google-http-client-gson:1.20.0') {
         exclude module: 'httpclient'
