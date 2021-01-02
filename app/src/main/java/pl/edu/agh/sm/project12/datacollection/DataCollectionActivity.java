@@ -26,6 +26,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -104,12 +105,14 @@ public class DataCollectionActivity extends AppCompatActivity {
             if (resultCode == RESULT_OK) {
                 String name = data.getStringExtra("name");
                 int iterations = data.getIntExtra("iterations", 0);
+                String imagesDirPath = data.getStringExtra("images_directory");
 
                 startDataCollection(TaskData.builder()
                         .id(UUID.randomUUID().toString())
                         .name(name)
                         .iterations(iterations)
                         .progress(0d)
+                        .imagesDirPath(imagesDirPath)
                         .build());
             }
         }
@@ -119,6 +122,7 @@ public class DataCollectionActivity extends AppCompatActivity {
         Data inputData = new Data.Builder()
                 .putString(DataCollectionWorker.KEY_NAME, data.getName())
                 .putInt(DataCollectionWorker.KEY_ITERATIONS, data.getIterations())
+                .putString(DataCollectionWorker.KEY_IMAGES_DIR, data.getImagesDirPath())
                 .build();
         WorkContinuation workContinuation = WorkManager.getInstance(getApplicationContext())
                 .beginWith(new OneTimeWorkRequest.Builder(DataCollectionWorker.class)
@@ -133,7 +137,7 @@ public class DataCollectionActivity extends AppCompatActivity {
                         data.setProgress(data.getIterations());
                     } else {
                         int progress = workInfo.getProgress().getInt(DataCollectionWorker.KEY_PROGRESS, 0);
-                        data.setProgress(1d * progress / data.getIterations());
+                        data.setProgress(1d * progress / new File(data.getImagesDirPath()).listFiles().length);
                     }
                     dataCollectionTaskListAdapter.notifyDataSetChanged();
                 });
@@ -179,5 +183,6 @@ public class DataCollectionActivity extends AppCompatActivity {
         private String name;
         private int iterations;
         private double progress;
+        private String imagesDirPath;
     }
 }

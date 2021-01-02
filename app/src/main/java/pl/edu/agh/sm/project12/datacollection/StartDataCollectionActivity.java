@@ -9,6 +9,8 @@ import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import java.io.File;
+
 import pl.edu.agh.sm.project12.R;
 
 public class StartDataCollectionActivity extends AppCompatActivity {
@@ -46,10 +48,12 @@ public class StartDataCollectionActivity extends AppCompatActivity {
     public void start(View view) {
         String name = nameEditText.getText().toString();
         int iterations = this.iterations;
+        File imagesDirectory = new File(getApplicationContext().getFilesDir(), "images");
 
         Intent intent = new Intent();
         intent.putExtra("name", name);
         intent.putExtra("iterations", iterations);
+        intent.putExtra("images_directory", imagesDirectory.getAbsolutePath());
         setResult(RESULT_OK, intent);
         finish();
     }

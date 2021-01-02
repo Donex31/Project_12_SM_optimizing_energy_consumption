@@ -2,10 +2,13 @@ package pl.edu.agh.sm.project12.datacollection;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.ImageReader;
 import android.os.BatteryManager;
 import android.util.Log;
+import android.view.Surface;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.res.ResourcesCompat;
@@ -30,6 +33,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -47,6 +51,7 @@ public class DataCollectionWorker extends Worker {
     public static final String KEY_ITERATIONS = "iterations";
     public static final String KEY_PROGRESS = "progress";
     public static final String KEY_NAME = "name";
+    public static final String KEY_IMAGES_DIR = "images_directory";
 
     private static final String[] CSV_HEADERS = {"image", "width", "height", "duration", "energy"};
     private static final String CSV_EXT = ".csv";
@@ -62,21 +67,32 @@ public class DataCollectionWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
-        List<List<String>> data = new ArrayList<>();
         Data inputData = workerParams.getInputData();
 
         int iterations = inputData.getInt(KEY_ITERATIONS, 0);
         String fileName = inputData.getString(KEY_NAME) + CSV_EXT;
+        String imagesDirPath = inputData.getString(KEY_IMAGES_DIR);
 
+        File appFilesDir = getApplicationContext().getFilesDir();
+        Log.i(TAG, "File directory: " + appFilesDir.getAbsolutePath());
+        File imagesDir = new File(imagesDirPath);
         Log.i(TAG, "Starting data collection, " + iterations + " iterations");
-        for (int i = 0; i < iterations; ++i) {
-            Log.i(TAG, "Data collection, iteration " + i);
-            data.add(performIteration());
-            setProgressAsync(new Data.Builder().putInt(KEY_PROGRESS, i).build());
-        }
-
-        try {
-            saveToFile(fileName, data);
+        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(new File(appFilesDir, fileName).getAbsolutePath()));
+             CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(CSV_HEADERS))
+        ) {
+            int imgCounter = 0;
+            for (File file : imagesDir.listFiles()){
+                Log.i(TAG, "file: " + file.getName());
+                for (int i = 0; i < iterations; ++i) {
+                    Log.i(TAG, "Data collection, iteration " + i);
+                    List<String> record = performIteration(file);
+                    if (!record.isEmpty()) {
+                        csvPrinter.printRecord(record);
+                        csvPrinter.flush();
+                    }
+                }
+                setProgressAsync(new Data.Builder().putInt(KEY_PROGRESS, ++imgCounter).build());
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -86,7 +102,7 @@ public class DataCollectionWorker extends Worker {
 
     private final TextRecognitionOcr recognizer = new TextRecognitionOcr();
 
-    private List<String> performIteration() {
+    private List<String> performIteration(File image) {
         List<String> results = new ArrayList<>(4);
 
         BatteryManager batteryManager = (BatteryManager) getApplicationContext().getSystemService(BATTERY_SERVICE);
@@ -105,15 +121,17 @@ public class DataCollectionWorker extends Worker {
         });
         batteryConsumptionMonitor.start();
 
-        Drawable d = ResourcesCompat.getDrawable(getApplicationContext().getResources(), R.drawable.germany, null);
-        Bitmap bitmap = ((BitmapDrawable) d).getBitmap();
-        results.add(Integer.toString(R.drawable.germany));
+        Bitmap bitmap = BitmapFactory.decodeFile(image.getAbsolutePath());
+        if (bitmap == null) {
+            Log.w(TAG, "Couldn't decode file: " + image.getName() + " Ignoring...");
+            return results;
+        }
+        results.add(image.getName());
         results.add(Integer.toString(bitmap.getWidth()));
         results.add(Integer.toString(bitmap.getHeight()));
 
         try {
-            InputImage inputImage = recognizer.getInputImage(
-                    getApplicationContext().getResources(), R.drawable.germany);
+            InputImage inputImage = InputImage.fromBitmap(bitmap, Surface.ROTATION_0);
 
             Instant start = Instant.now();
 
@@ -162,10 +180,13 @@ public class DataCollectionWorker extends Worker {
         try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(new File(appFilesDir, fileName).getAbsolutePath()));
              CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(CSV_HEADERS))
         ) {
+            int i = 0;
             for (List<String> record : data) {
+                if (++i % 1000 == 0) {
+                    csvPrinter.flush();
+                }
                 csvPrinter.printRecord(record);
             }
-            csvPrinter.flush();
         }
     }
 }
