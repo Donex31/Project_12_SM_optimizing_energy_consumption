@@ -71,7 +71,7 @@ public class DataCollectionWorker extends Worker {
 
         int iterations = inputData.getInt(KEY_ITERATIONS, 0);
         String fileName = inputData.getString(KEY_NAME) + CSV_EXT;
-        boolean isCloud = true;
+        boolean isCloud = inputData.getBoolean(KEY_CLOUD, false);
 
         Log.i(TAG, "Starting data collection, " + iterations + " iterations");
         for (int i = 0; i < iterations; ++i) {
