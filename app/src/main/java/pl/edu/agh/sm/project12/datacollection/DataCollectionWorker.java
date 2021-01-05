@@ -14,6 +14,7 @@ import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
 import com.google.android.gms.tasks.Task;
+import com.google.api.services.vision.v1.model.Image;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.text.Text;
 
@@ -34,9 +35,11 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 
+import pl.edu.agh.sm.project12.MainActivity;
 import pl.edu.agh.sm.project12.R;
 import pl.edu.agh.sm.project12.battery.BatteryConsumptionListener;
 import pl.edu.agh.sm.project12.battery.BatteryConsumptionMonitor;
+import pl.edu.agh.sm.project12.cloudocr.TextRecognitionCloudOcr;
 import pl.edu.agh.sm.project12.ocr.TextRecognitionOcr;
 
 import static android.content.Context.BATTERY_SERVICE;
@@ -47,6 +50,7 @@ public class DataCollectionWorker extends Worker {
     public static final String KEY_ITERATIONS = "iterations";
     public static final String KEY_PROGRESS = "progress";
     public static final String KEY_NAME = "name";
+    public static final String KEY_CLOUD = "useCloud";
 
     private static final String[] CSV_HEADERS = {"image", "width", "height", "duration", "energy"};
     private static final String CSV_EXT = ".csv";
@@ -67,11 +71,12 @@ public class DataCollectionWorker extends Worker {
 
         int iterations = inputData.getInt(KEY_ITERATIONS, 0);
         String fileName = inputData.getString(KEY_NAME) + CSV_EXT;
+        boolean isCloud = true;
 
         Log.i(TAG, "Starting data collection, " + iterations + " iterations");
         for (int i = 0; i < iterations; ++i) {
             Log.i(TAG, "Data collection, iteration " + i);
-            data.add(performIteration());
+            data.add(performIteration(isCloud));
             setProgressAsync(new Data.Builder().putInt(KEY_PROGRESS, i).build());
         }
 
@@ -85,8 +90,9 @@ public class DataCollectionWorker extends Worker {
     }
 
     private final TextRecognitionOcr recognizer = new TextRecognitionOcr();
+    private final TextRecognitionCloudOcr cloudRecognizer = new TextRecognitionCloudOcr(MainActivity.accessToken);
 
-    private List<String> performIteration() {
+    private List<String> performIteration(boolean useCloud) {
         List<String> results = new ArrayList<>(4);
 
         BatteryManager batteryManager = (BatteryManager) getApplicationContext().getSystemService(BATTERY_SERVICE);
@@ -118,18 +124,28 @@ public class DataCollectionWorker extends Worker {
             Instant start = Instant.now();
 
             CountDownLatch latch = new CountDownLatch(1);
-            Task<Text> process = recognizer.process(inputImage);
-
-            process.addOnSuccessListener(visionText -> {
+            if(useCloud){
+                cloudRecognizer.performCloudVisionRequest(bitmap);
                 Instant finish = Instant.now();
                 Duration between = Duration.between(start, finish);
                 Log.i(TAG, "Elapsed time: " + between.toString());
                 results.add(Integer.toString(between.getNano()));
                 latch.countDown();
-            }).addOnFailureListener(e -> {
-                Log.e(TAG, "Error while OCRing");
-                latch.countDown();
-            });
+            }
+            else{
+                Task<Text> process = recognizer.process(inputImage);
+
+                process.addOnSuccessListener(visionText -> {
+                    Instant finish = Instant.now();
+                    Duration between = Duration.between(start, finish);
+                    Log.i(TAG, "Elapsed time: " + between.toString());
+                    results.add(Integer.toString(between.getNano()));
+                    latch.countDown();
+                }).addOnFailureListener(e -> {
+                    Log.e(TAG, "Error while OCRing");
+                    latch.countDown();
+                });
+            }
             latch.await();
         } catch (InterruptedException e) {
             e.printStackTrace();

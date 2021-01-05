@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
     static final int REQUEST_ACCOUNT_AUTHORIZATION = 102;
     static final int REQUEST_PERMISSIONS = 13;
 
-    private static String accessToken;
+    public static String accessToken;
 
     private Account mAccount;
     private ProgressDialog mProgressDialog;
@@ -159,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void onTokenReceived(String token) {
         accessToken = token;
-        //textView.setText("Authorization was successful!!!");
+        textView.setText("Authorization was successful!!!");
     }
 
     public void openDataCollectionActivity(View view) {
