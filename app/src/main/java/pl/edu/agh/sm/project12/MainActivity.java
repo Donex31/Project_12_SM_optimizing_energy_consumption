@@ -54,6 +54,10 @@ public class MainActivity extends AppCompatActivity {
         textView = findViewById(R.id.textView);
         Button textRecognitionCloudButton = findViewById(R.id.textRecognitionCloudButton);
 
+        if(Power.isConnected(getBaseContext())){
+            textView.setText("Unplug the charger!!");
+        }
+
         textRecognitionCloudButton.setOnClickListener(v -> ActivityCompat.requestPermissions(MainActivity.this,
                 new String[]{Manifest.permission.GET_ACCOUNTS},
                 REQUEST_PERMISSIONS));
