@@ -106,7 +106,7 @@ public class DataCollectionWorker extends Worker {
         List<String> results = new ArrayList<>(4);
 
         BatteryManager batteryManager = (BatteryManager) getApplicationContext().getSystemService(BATTERY_SERVICE);
-        Duration samplingPeriod = Duration.ofMillis(10);
+        Duration samplingPeriod = Duration.ofMillis(50);
         BatteryConsumptionMonitor batteryConsumptionMonitor = new BatteryConsumptionMonitor(batteryManager, samplingPeriod);
         batteryConsumptionMonitor.setListener(new BatteryConsumptionListener() {
             @Override
