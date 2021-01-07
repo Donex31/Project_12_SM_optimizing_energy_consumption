@@ -15,7 +15,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import pl.edu.agh.sm.project12.datacollection.DataCollectionActivity;
+import pl.edu.agh.sm.project12.datacollection.StartDataCollectionActivity;
 import pl.edu.agh.sm.project12.ocr.FaceDetectionOcr;
 import pl.edu.agh.sm.project12.ocr.TextRecognitionOcr;
 
@@ -167,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void openDataCollectionActivity(View view) {
-        Intent intent = new Intent(this, DataCollectionActivity.class);
+        Intent intent = new Intent(this, StartDataCollectionActivity.class);
         startActivity(intent);
     }
 }

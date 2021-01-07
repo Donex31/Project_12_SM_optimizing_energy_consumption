@@ -2,8 +2,8 @@ package pl.edu.agh.sm.project12.datacollection;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,7 +13,6 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.work.Data;
@@ -23,15 +22,10 @@ import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 import java.io.File;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import lombok.AllArgsConstructor;
@@ -41,12 +35,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import pl.edu.agh.sm.project12.R;
 
-public class DataCollectionActivity extends AppCompatActivity {
-    private static final int RC_START_DATA_COLLECTION = 1;
+public class ResultDataCollectionActivity extends AppCompatActivity {
+    private static final String TAG = ResultDataCollectionActivity.class.getSimpleName();
 
-    private static final String BUNDLE_TASK_IDS = "task_ids";
-    private static final String BUNDLE_TASKS = "tasks";
-    private static final String PREFS_NAME = "DataCollectionPreferences";
+    private static final int RC_START_DATA_COLLECTION = 1;
 
     private final ArrayList<String> taskIds = new ArrayList<>();
     private final HashMap<String, TaskData> tasks = new HashMap<>();
@@ -56,68 +48,35 @@ public class DataCollectionActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setTitle("Data collection");
-        loadSettings();
 
         setContentView(R.layout.activity_data_collection);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(view -> {
-            Intent intent = new Intent(this, StartDataCollectionActivity.class);
-            startActivityForResult(intent, RC_START_DATA_COLLECTION);
-        });
-
         ListView dataCollectionsTasksListView = findViewById(R.id.dataCollectionsTaskListView);
         dataCollectionTaskListAdapter = new DataCollectionTaskListAdapter();
         dataCollectionsTasksListView.setAdapter(dataCollectionTaskListAdapter);
-    }
 
-    private void loadSettings() {
-        SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+        Intent data = getIntent();
+        String name = data.getStringExtra("name");
+        int iterations = data.getIntExtra("iterations", 0);
+        String imagesDirPath = data.getStringExtra("images_directory");
+        boolean useCloud = data.getBooleanExtra("useCloud", false);
 
-        if (settings.contains(BUNDLE_TASK_IDS)) {
-            ArrayList<?> ids = new Gson().fromJson(settings.getString(BUNDLE_TASK_IDS, "[]"), ArrayList.class);
-            ids.forEach(i -> taskIds.add((String) i));
-        }
-        if (settings.contains(BUNDLE_TASKS)) {
-            HashMap<?, ?> savedTasks = new Gson().fromJson(settings.getString(BUNDLE_TASKS, "{}"),
-                    new TypeToken<HashMap<String, TaskData>>(){}.getType());
-            savedTasks.forEach((k, v) -> tasks.put((String) k, (TaskData) v));
-        }
+        startDataCollection(TaskData.builder()
+                .id(UUID.randomUUID().toString())
+                .name(name)
+                .iterations(iterations)
+                .useCloud(useCloud)
+                .progress(0d)
+                .imagesDirPath(imagesDirPath)
+                .build());
     }
 
     @Override
     protected void onStop() {
-        SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
-        SharedPreferences.Editor editor = settings.edit();
-
-        editor.putString(BUNDLE_TASK_IDS, new Gson().toJson(taskIds));
-        editor.putString(BUNDLE_TASKS, new Gson().toJson(tasks));
-        editor.apply();
-
         super.onStop();
-    }
-
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == RC_START_DATA_COLLECTION) {
-            if (resultCode == RESULT_OK) {
-                String name = data.getStringExtra("name");
-                int iterations = data.getIntExtra("iterations", 0);
-                String imagesDirPath = data.getStringExtra("images_directory");
-                boolean useCloud = data.getBooleanExtra("useCloud", false);
-
-                startDataCollection(TaskData.builder()
-                        .id(UUID.randomUUID().toString())
-                        .name(name)
-                        .iterations(iterations)
-                        .useCloud(useCloud)
-                        .progress(0d)
-                        .imagesDirPath(imagesDirPath)
-                        .build());
-            }
-        }
+        throw new RuntimeException("Not supported");
     }
 
     private void startDataCollection(TaskData data) {
@@ -152,7 +111,7 @@ public class DataCollectionActivity extends AppCompatActivity {
 
     private class DataCollectionTaskListAdapter extends ArrayAdapter<String> {
         public DataCollectionTaskListAdapter() {
-            super(DataCollectionActivity.this, -1, taskIds);
+            super(ResultDataCollectionActivity.this, -1, taskIds);
         }
 
         @Override

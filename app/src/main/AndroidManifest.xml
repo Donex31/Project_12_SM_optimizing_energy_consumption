@@ -14,7 +14,7 @@
         android:theme="@style/Theme.Project_12_SM_optimizing_energy_consumption">
         <activity android:name=".datacollection.StartDataCollectionActivity"></activity>
         <activity
-            android:name=".datacollection.DataCollectionActivity"
+            android:name=".datacollection.ResultDataCollectionActivity"
             android:label="@string/title_activity_data_collection"
             android:theme="@style/Theme.Project_12_SM_optimizing_energy_consumption.NoActionBar" />
         <activity android:name=".MainActivity">

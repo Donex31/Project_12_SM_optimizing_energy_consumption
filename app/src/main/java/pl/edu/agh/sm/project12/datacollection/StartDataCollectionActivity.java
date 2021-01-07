@@ -56,12 +56,11 @@ public class StartDataCollectionActivity extends AppCompatActivity {
         File imagesDirectory = new File(getApplicationContext().getFilesDir(), "images");
         boolean useCloud = this.useCloud.isChecked();
 
-        Intent intent = new Intent();
+        Intent intent = new Intent(this, ResultDataCollectionActivity.class);
         intent.putExtra("name", name);
         intent.putExtra("iterations", iterations);
         intent.putExtra("images_directory", imagesDirectory.getAbsolutePath());
         intent.putExtra("useCloud", useCloud);
-        setResult(RESULT_OK, intent);
-        finish();
+        startActivity(intent);
     }
 }
