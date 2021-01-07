@@ -22,6 +22,7 @@ import org.apache.commons.csv.CSVPrinter;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -29,6 +30,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import pl.edu.agh.sm.project12.MainActivity;
 import pl.edu.agh.sm.project12.battery.BatteryConsumptionListener;
@@ -47,10 +49,19 @@ public class DataCollectionWorker extends Worker {
     public static final String KEY_IMAGES_DIR = "images_directory";
     public static final String KEY_CLOUD = "useCloud";
 
-    private static final String[] CSV_HEADERS = {"image", "width", "height", "duration", "energy", "image_size"};
+    private static final String[] CSV_HEADERS = {
+            "image", // file name
+            "width", // image width (px)
+            "height", // image height (px)
+            "duration", // duration (nanos)
+            "energy", // battery consumption (mAh)
+            "image_size", // image size (bytes)
+            "cloud", // whether it's cloud (boolean)
+    };
     private static final String CSV_EXT = ".csv";
 
     private final WorkerParameters workerParams;
+    private int iterationCounter = 0;
 
     public DataCollectionWorker(Context appContext, WorkerParameters workerParams) {
         super(appContext, workerParams);
@@ -73,42 +84,31 @@ public class DataCollectionWorker extends Worker {
         File imagesDir = new File(imagesDirPath);
         Log.i(TAG, "Starting data collection, " + iterations + " iterations");
 
-        /*
-         * Save csv to file.
-         * File will be located under /data/data/pl.edu.agh.sm.project12
-         * <p>
-         * Example file content:
-         * <p>
-         * image,width,height,duration,energy,image_size
-         * 2131165312,522,512,456000000,3.134947822E-5,756396
-         * <p>
-         * image - resource id
-         * width and height - pixels
-         * duration - nano sec
-         * energy - mAh
-         * image_size - bytes
-         */
         try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(new File(appFilesDir, fileName).getAbsolutePath()));
-             CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(CSV_HEADERS))
-        ) {
-            int imgCounter = 0;
+             CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(CSV_HEADERS))) {
+            iterationCounter = 0;
             for (File file : imagesDir.listFiles()) {
-                Log.i(TAG, "file: " + file.getName());
-                for (int i = 0; i < iterations; ++i) {
-                    Log.i(TAG, "Data collection, iteration " + i);
-                    List<String> record = performIteration(file, isCloud);
-                    if (!record.isEmpty()) {
-                        csvPrinter.printRecord(record);
-                        csvPrinter.flush();
-                    }
-                }
-                setProgressAsync(new Data.Builder().putInt(KEY_PROGRESS, ++imgCounter).build());
+                collectDataForFile(iterations, false, csvPrinter, file);
+                collectDataForFile(iterations, true, csvPrinter, file);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new UncheckedIOException(e);
         }
 
         return Result.success();
+    }
+
+    private void collectDataForFile(int iterations, boolean isCloud, CSVPrinter csvPrinter, File file) throws IOException {
+        Log.i(TAG, "file: " + file.getName() + ", cloud: " + isCloud);
+        for (int i = 0; i < iterations; ++i) {
+            Log.i(TAG, "Data collection, iteration " + i);
+            List<String> record = performIteration(file, isCloud);
+            if (!record.isEmpty()) {
+                csvPrinter.printRecord(record);
+                csvPrinter.flush();
+            }
+            setProgressAsync(new Data.Builder().putInt(KEY_PROGRESS, ++iterationCounter).build());
+        }
     }
 
     private final TextRecognitionOcr recognizer = new TextRecognitionOcr();
@@ -147,29 +147,25 @@ public class DataCollectionWorker extends Worker {
 
             Instant start = Instant.now();
 
-            CountDownLatch latch = new CountDownLatch(1);
             if (useCloud) {
-                cloudRecognizer.performCloudVisionRequest(bitmap);
-                Instant finish = Instant.now();
-                Duration between = Duration.between(start, finish);
-                Log.i(TAG, "Elapsed time: " + between.toString());
-                results.add(Integer.toString(between.getNano()));
-                latch.countDown();
+                CountDownLatch latch = new CountDownLatch(1);
+                cloudRecognizer.performCloudVisionRequest(bitmap, latch::countDown);
+                latch.await();
             } else {
                 Task<Text> process = recognizer.process(inputImage);
-
+                CountDownLatch latch = new CountDownLatch(1);
                 process.addOnSuccessListener(visionText -> {
-                    Instant finish = Instant.now();
-                    Duration between = Duration.between(start, finish);
-                    Log.i(TAG, "Elapsed time: " + between.toString());
-                    results.add(Integer.toString(between.getNano()));
                     latch.countDown();
                 }).addOnFailureListener(e -> {
-                    Log.e(TAG, "Error while OCRing");
                     latch.countDown();
                 });
+                latch.await();
             }
-            latch.await();
+
+            Instant finish = Instant.now();
+            Duration between = Duration.between(start, finish);
+            Log.i(TAG, "Elapsed time: " + between.toString());
+            results.add(Integer.toString(between.getNano()));
         } catch (InterruptedException e) {
             e.printStackTrace();
         } finally {
@@ -178,6 +174,7 @@ public class DataCollectionWorker extends Worker {
 
         // in bytes
         results.add("" + image.length());
+        results.add("" + useCloud);
 
         return results;
     }

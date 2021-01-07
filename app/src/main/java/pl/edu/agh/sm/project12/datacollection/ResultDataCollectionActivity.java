@@ -80,6 +80,7 @@ public class ResultDataCollectionActivity extends AppCompatActivity {
     }
 
     private void startDataCollection(TaskData data) {
+        int fileCount = new File(data.getImagesDirPath()).listFiles().length;
         Data inputData = new Data.Builder()
                 .putString(DataCollectionWorker.KEY_NAME, data.getName())
                 .putInt(DataCollectionWorker.KEY_ITERATIONS, data.getIterations())
@@ -99,7 +100,7 @@ public class ResultDataCollectionActivity extends AppCompatActivity {
                         data.setProgress(data.getIterations());
                     } else {
                         int progress = workInfo.getProgress().getInt(DataCollectionWorker.KEY_PROGRESS, 0);
-                        data.setProgress(1d * progress / new File(data.getImagesDirPath()).listFiles().length);
+                        data.setProgress(1d * progress / fileCount / data.iterations);
                     }
                     dataCollectionTaskListAdapter.notifyDataSetChanged();
                 });

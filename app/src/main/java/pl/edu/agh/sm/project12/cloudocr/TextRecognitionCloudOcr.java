@@ -35,23 +35,18 @@ public class TextRecognitionCloudOcr {
     private final String accessToken;
     private final String TAG = "CloudTextRecognitionOcr";
 
-    public TextRecognitionCloudOcr(String accessToken){
+    public TextRecognitionCloudOcr(String accessToken) {
         this.accessToken = accessToken;
     }
 
-    public void performCloudVisionRequest(Bitmap bitmap) {
+    public void performCloudVisionRequest(Bitmap bitmap, Runnable onFinish) {
         if (bitmap != null) {
-            try {
-                callCloudVision(bitmap);
-            } catch (IOException e) {
-                Log.e(TAG, e.getMessage());
-            }
+            callCloudVision(bitmap, onFinish);
         }
     }
 
     @SuppressLint("StaticFieldLeak")
-    private void callCloudVision(final Bitmap bitmap) throws IOException {
-
+    private void callCloudVision(final Bitmap bitmap, Runnable onFinish) {
         new AsyncTask<Object, Void, BatchAnnotateImagesResponse>() {
             @Override
             protected BatchAnnotateImagesResponse doInBackground(Object... params) {
@@ -94,13 +89,13 @@ public class TextRecognitionCloudOcr {
                 } catch (IOException e) {
                     Log.d(TAG, "Request error: " + e.getMessage());
                 }
+                onFinish.run();
                 return null;
             }
 
             protected void onPostExecute(BatchAnnotateImagesResponse response) {
                 Log.d(TAG, "Recognized text: " + getDetectedTexts(response));
             }
-
         }.execute();
     }
 
