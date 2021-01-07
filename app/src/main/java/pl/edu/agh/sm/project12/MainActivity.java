@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
     static final int REQUEST_ACCOUNT_AUTHORIZATION = 102;
     static final int REQUEST_PERMISSIONS = 13;
 
-    private static String accessToken;
+    public static String accessToken;
 
     private Account mAccount;
     private ProgressDialog mProgressDialog;
@@ -53,6 +53,10 @@ public class MainActivity extends AppCompatActivity {
         mProgressDialog = new ProgressDialog(this);
         textView = findViewById(R.id.textView);
         Button textRecognitionCloudButton = findViewById(R.id.textRecognitionCloudButton);
+
+        if(Power.isConnected(getBaseContext())){
+            textView.setText("Unplug the charger!!");
+        }
 
         textRecognitionCloudButton.setOnClickListener(v -> ActivityCompat.requestPermissions(MainActivity.this,
                 new String[]{Manifest.permission.GET_ACCOUNTS},
@@ -159,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void onTokenReceived(String token) {
         accessToken = token;
-        //textView.setText("Authorization was successful!!!");
+        textView.setText("Authorization was successful!!!");
     }
 
     public void openDataCollectionActivity(View view) {

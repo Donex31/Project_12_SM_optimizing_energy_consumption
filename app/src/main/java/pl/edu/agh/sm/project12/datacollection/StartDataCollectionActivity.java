@@ -2,11 +2,13 @@ package pl.edu.agh.sm.project12.datacollection;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.SeekBar;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import java.io.File;
@@ -16,6 +18,7 @@ import pl.edu.agh.sm.project12.R;
 public class StartDataCollectionActivity extends AppCompatActivity {
     private int iterations = 0;
     private EditText nameEditText;
+    private Switch useCloud;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,6 +28,8 @@ public class StartDataCollectionActivity extends AppCompatActivity {
 
         TextView iterationsText = findViewById(R.id.numberOfIterationsText);
         SeekBar iterationsSeekBar = findViewById(R.id.numberOfIterationsSeekBar);
+        useCloud = findViewById(R.id.useCloudSwitch);
+
         iterationsSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -49,11 +54,13 @@ public class StartDataCollectionActivity extends AppCompatActivity {
         String name = nameEditText.getText().toString();
         int iterations = this.iterations;
         File imagesDirectory = new File(getApplicationContext().getFilesDir(), "images");
+        boolean useCloud = this.useCloud.isChecked();
 
         Intent intent = new Intent();
         intent.putExtra("name", name);
         intent.putExtra("iterations", iterations);
         intent.putExtra("images_directory", imagesDirectory.getAbsolutePath());
+        intent.putExtra("useCloud", useCloud);
         setResult(RESULT_OK, intent);
         finish();
     }

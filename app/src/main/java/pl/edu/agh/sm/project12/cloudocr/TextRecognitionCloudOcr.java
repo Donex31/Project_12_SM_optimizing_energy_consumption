@@ -1,9 +1,14 @@
 package pl.edu.agh.sm.project12.cloudocr;
 
 import android.annotation.SuppressLint;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.util.Log;
+
+import androidx.core.content.res.ResourcesCompat;
 
 import com.google.api.client.extensions.android.http.AndroidHttp;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
@@ -27,10 +32,10 @@ import java.util.Locale;
 
 public class TextRecognitionCloudOcr {
 
-    private static String accessToken;
+    private final String accessToken;
     private final String TAG = "CloudTextRecognitionOcr";
 
-    TextRecognitionCloudOcr(String accessToken){
+    public TextRecognitionCloudOcr(String accessToken){
         this.accessToken = accessToken;
     }
 
