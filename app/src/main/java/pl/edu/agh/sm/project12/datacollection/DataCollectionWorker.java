@@ -3,21 +3,16 @@ package pl.edu.agh.sm.project12.datacollection;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.media.ImageReader;
 import android.os.BatteryManager;
 import android.util.Log;
 import android.view.Surface;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.res.ResourcesCompat;
 import androidx.work.Data;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
 import com.google.android.gms.tasks.Task;
-import com.google.api.services.vision.v1.model.Image;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.text.Text;
 
@@ -26,21 +21,16 @@ import org.apache.commons.csv.CSVPrinter;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 
 import pl.edu.agh.sm.project12.MainActivity;
-import pl.edu.agh.sm.project12.R;
 import pl.edu.agh.sm.project12.battery.BatteryConsumptionListener;
 import pl.edu.agh.sm.project12.battery.BatteryConsumptionMonitor;
 import pl.edu.agh.sm.project12.cloudocr.TextRecognitionCloudOcr;
@@ -57,7 +47,7 @@ public class DataCollectionWorker extends Worker {
     public static final String KEY_IMAGES_DIR = "images_directory";
     public static final String KEY_CLOUD = "useCloud";
 
-    private static final String[] CSV_HEADERS = {"image", "width", "height", "duration", "energy"};
+    private static final String[] CSV_HEADERS = {"image", "width", "height", "duration", "energy", "image_size"};
     private static final String CSV_EXT = ".csv";
 
     private final WorkerParameters workerParams;
@@ -170,6 +160,9 @@ public class DataCollectionWorker extends Worker {
         } finally {
             batteryConsumptionMonitor.stop();
         }
+
+        // in bytes
+        results.add("" + image.length());
 
         return results;
     }
