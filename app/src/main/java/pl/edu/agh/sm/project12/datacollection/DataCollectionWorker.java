@@ -72,11 +72,27 @@ public class DataCollectionWorker extends Worker {
         Log.i(TAG, "File directory: " + appFilesDir.getAbsolutePath());
         File imagesDir = new File(imagesDirPath);
         Log.i(TAG, "Starting data collection, " + iterations + " iterations");
+
+        /*
+         * Save csv to file.
+         * File will be located under /data/data/pl.edu.agh.sm.project12
+         * <p>
+         * Example file content:
+         * <p>
+         * image,width,height,duration,energy,image_size
+         * 2131165312,522,512,456000000,3.134947822E-5,756396
+         * <p>
+         * image - resource id
+         * width and height - pixels
+         * duration - nano sec
+         * energy - mAh
+         * image_size - bytes
+         */
         try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(new File(appFilesDir, fileName).getAbsolutePath()));
              CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(CSV_HEADERS))
         ) {
             int imgCounter = 0;
-            for (File file : imagesDir.listFiles()){
+            for (File file : imagesDir.listFiles()) {
                 Log.i(TAG, "file: " + file.getName());
                 for (int i = 0; i < iterations; ++i) {
                     Log.i(TAG, "Data collection, iteration " + i);
@@ -132,15 +148,14 @@ public class DataCollectionWorker extends Worker {
             Instant start = Instant.now();
 
             CountDownLatch latch = new CountDownLatch(1);
-            if(useCloud){
+            if (useCloud) {
                 cloudRecognizer.performCloudVisionRequest(bitmap);
                 Instant finish = Instant.now();
                 Duration between = Duration.between(start, finish);
                 Log.i(TAG, "Elapsed time: " + between.toString());
                 results.add(Integer.toString(between.getNano()));
                 latch.countDown();
-            }
-            else{
+            } else {
                 Task<Text> process = recognizer.process(inputImage);
 
                 process.addOnSuccessListener(visionText -> {
@@ -165,37 +180,5 @@ public class DataCollectionWorker extends Worker {
         results.add("" + image.length());
 
         return results;
-    }
-
-    /**
-     * Save csv to file.
-     * File will be located under /data/data/pl.edu.agh.sm.project12
-     *
-     * Example file content:
-     *
-     *image,width,height,duration,energy
-     *2131165312,522,512,456000000,3.134947822E-5
-     *
-     * image - resource id
-     * width and height - pixels
-     * duration - nano sec
-     * energy - mAh
-     *
-     */
-    private void saveToFile(String fileName, List<List<String>> data) throws IOException {
-        File appFilesDir = getApplicationContext().getFilesDir();
-        Log.i(TAG, "File directory: " + appFilesDir.getAbsolutePath());
-
-        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(new File(appFilesDir, fileName).getAbsolutePath()));
-             CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(CSV_HEADERS))
-        ) {
-            int i = 0;
-            for (List<String> record : data) {
-                if (++i % 1000 == 0) {
-                    csvPrinter.flush();
-                }
-                csvPrinter.printRecord(record);
-            }
-        }
     }
 }
