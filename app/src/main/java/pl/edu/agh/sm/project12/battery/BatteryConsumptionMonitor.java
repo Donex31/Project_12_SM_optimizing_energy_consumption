@@ -66,9 +66,6 @@ public class BatteryConsumptionMonitor {
 
         lastMeasure = measure;
         mAh += currentMilli * deltaHours;
-        Log.v(TAG, deltaHours + " h delta");
-        Log.v(TAG, currentMilli + " mA");
-        Log.v(TAG, mAh + " mAh");
 
         if (listener != null) {
             listener.onSample(currentMicro, deltaNanos, mAh);

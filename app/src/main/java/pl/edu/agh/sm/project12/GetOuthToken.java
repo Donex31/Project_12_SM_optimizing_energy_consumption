@@ -11,6 +11,7 @@ import com.google.android.gms.auth.UserRecoverableAuthException;
 import java.io.IOException;
 
 class GetOAuthToken extends AsyncTask<Void, Void, Void> {
+    public static String accessToken;
     Activity mActivity;
     Account mAccount;
     int mRequestCode;
@@ -28,7 +29,7 @@ class GetOAuthToken extends AsyncTask<Void, Void, Void> {
         try {
             String token = fetchToken();
             if (token != null) {
-                ((MainActivity)mActivity).onTokenReceived(token);
+                MainActivity.accessToken = token;
             }
         } catch (IOException e) {
             e.printStackTrace();
