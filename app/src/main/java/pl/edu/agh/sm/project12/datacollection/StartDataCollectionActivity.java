@@ -52,9 +52,10 @@ public class StartDataCollectionActivity extends AppCompatActivity {
         nameEditText = findViewById(R.id.nameEditText);
 
         picker = findViewById(R.id.numberPicker);
-        picker.setDisplayedValues( new String[] { "Switch", "Neural network", "Random" } );
+        picker.setDisplayedValues( new String[] { "Switch", "Random", "Neural-Network-KNN",
+                "Neural-Network-HBOS", "Neural-Network-CBLOF", "Neural-Network-IFOREST" } );
         picker.setMinValue(0);
-        picker.setMaxValue(2);
+        picker.setMaxValue(5);
     }
 
     public void start(View view) {

@@ -110,7 +110,13 @@ public class DataCollectionWorker extends Worker {
                 } else if (processingMethod == 1) {
                     collectDataForFile(iterations, getRandomBoolean(), csvPrinter, file);
                 } else if (processingMethod == 2) {
-                    collectDataForFile(iterations, getNeuralNetworkChoice(file), csvPrinter, file);
+                    collectDataForFile(iterations, getNeuralNetworkChoice(file, "KNN"), csvPrinter, file);
+                } else if (processingMethod == 3) {
+                    collectDataForFile(iterations, getNeuralNetworkChoice(file, "HBOS"), csvPrinter, file);
+                } else if (processingMethod == 4) {
+                    collectDataForFile(iterations, getNeuralNetworkChoice(file, "CBLOF"), csvPrinter, file);
+                } else if (processingMethod == 5) {
+                    collectDataForFile(iterations, getNeuralNetworkChoice(file, "IFOREST"), csvPrinter, file);
                 }
             }
         } catch (IOException e) {
@@ -206,7 +212,7 @@ public class DataCollectionWorker extends Worker {
         return random.nextBoolean();
     }
 
-    private boolean getNeuralNetworkChoice(File file){
+    private boolean getNeuralNetworkChoice(File file, String anomalyPredictor) {
 
         Log.w(TAG, "Run Neural Network for: " + file.getName());
 
