@@ -63,7 +63,6 @@ public class MainActivity extends AppCompatActivity {
                 REQUEST_PERMISSIONS));
     }
 
-
     public void recognizeText(View view) {
         textView.setText("Recognition started...");
 

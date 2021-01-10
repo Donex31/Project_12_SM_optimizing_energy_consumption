@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.NumberPicker;
 import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -19,6 +20,7 @@ public class StartDataCollectionActivity extends AppCompatActivity {
     private int iterations = 0;
     private EditText nameEditText;
     private Switch useCloud;
+    private NumberPicker picker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +50,11 @@ public class StartDataCollectionActivity extends AppCompatActivity {
             }
         });
         nameEditText = findViewById(R.id.nameEditText);
+
+        picker = findViewById(R.id.numberPicker);
+        picker.setDisplayedValues( new String[] { "Switch", "Neural network", "Random" } );
+        picker.setMinValue(0);
+        picker.setMaxValue(2);
     }
 
     public void start(View view) {
@@ -55,12 +62,14 @@ public class StartDataCollectionActivity extends AppCompatActivity {
         int iterations = this.iterations;
         File imagesDirectory = new File(getApplicationContext().getFilesDir(), "images");
         boolean useCloud = this.useCloud.isChecked();
+        int processingMethod  = this.picker.getValue();
 
         Intent intent = new Intent(this, ResultDataCollectionActivity.class);
         intent.putExtra("name", name);
         intent.putExtra("iterations", iterations);
         intent.putExtra("images_directory", imagesDirectory.getAbsolutePath());
         intent.putExtra("useCloud", useCloud);
+        intent.putExtra("processingMethod", processingMethod);
         startActivity(intent);
     }
 }

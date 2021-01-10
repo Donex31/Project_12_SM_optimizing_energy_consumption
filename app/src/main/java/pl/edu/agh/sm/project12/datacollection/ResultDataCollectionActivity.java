@@ -62,12 +62,14 @@ public class ResultDataCollectionActivity extends AppCompatActivity {
         int iterations = data.getIntExtra("iterations", 0);
         String imagesDirPath = data.getStringExtra("images_directory");
         boolean useCloud = data.getBooleanExtra("useCloud", false);
+        int processingMethod = data.getIntExtra("processingMethod", 0);
 
         startDataCollection(TaskData.builder()
                 .id(UUID.randomUUID().toString())
                 .name(name)
                 .iterations(iterations)
                 .useCloud(useCloud)
+                .processingMethod(processingMethod)
                 .progress(0d)
                 .imagesDirPath(imagesDirPath)
                 .build());
@@ -86,6 +88,7 @@ public class ResultDataCollectionActivity extends AppCompatActivity {
                 .putInt(DataCollectionWorker.KEY_ITERATIONS, data.getIterations())
                 .putString(DataCollectionWorker.KEY_IMAGES_DIR, data.getImagesDirPath())
                 .putBoolean(DataCollectionWorker.KEY_CLOUD, data.useCloud)
+                .putInt(DataCollectionWorker.KEY_PROCESSING_METHOD, data.processingMethod)
                 .build();
         WorkContinuation workContinuation = WorkManager.getInstance(getApplicationContext())
                 .beginWith(new OneTimeWorkRequest.Builder(DataCollectionWorker.class)
@@ -148,5 +151,6 @@ public class ResultDataCollectionActivity extends AppCompatActivity {
         private boolean useCloud;
         private double progress;
         private String imagesDirPath;
+        private int processingMethod;
     }
 }

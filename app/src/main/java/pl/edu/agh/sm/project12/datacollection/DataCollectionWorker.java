@@ -29,6 +29,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -39,6 +40,8 @@ import pl.edu.agh.sm.project12.cloudocr.TextRecognitionCloudOcr;
 import pl.edu.agh.sm.project12.ocr.TextRecognitionOcr;
 
 import static android.content.Context.BATTERY_SERVICE;
+import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
+
 
 public class DataCollectionWorker extends Worker {
     private static final String TAG = DataCollectionWorker.class.getSimpleName();
@@ -48,6 +51,7 @@ public class DataCollectionWorker extends Worker {
     public static final String KEY_NAME = "name";
     public static final String KEY_IMAGES_DIR = "images_directory";
     public static final String KEY_CLOUD = "useCloud";
+    public static final String KEY_PROCESSING_METHOD = "processingMethod";
 
     private static final String[] CSV_HEADERS = {
             "image", // file name
@@ -77,6 +81,7 @@ public class DataCollectionWorker extends Worker {
         int iterations = inputData.getInt(KEY_ITERATIONS, 0);
         String fileName = inputData.getString(KEY_NAME) + CSV_EXT;
         boolean isCloud = inputData.getBoolean(KEY_CLOUD, false);
+        int processingMethod = inputData.getInt(KEY_PROCESSING_METHOD, 0);
         String imagesDirPath = inputData.getString(KEY_IMAGES_DIR);
 
         File appFilesDir = getApplicationContext().getFilesDir();
@@ -88,8 +93,14 @@ public class DataCollectionWorker extends Worker {
              CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(CSV_HEADERS))) {
             iterationCounter = 0;
             for (File file : imagesDir.listFiles()) {
-                collectDataForFile(iterations, false, csvPrinter, file);
-                collectDataForFile(iterations, true, csvPrinter, file);
+                if (processingMethod == 0) {
+                    collectDataForFile(iterations, false, csvPrinter, file);
+                    collectDataForFile(iterations, true, csvPrinter, file);
+                } else if (processingMethod == 1) {
+                    collectDataForFile(iterations, getRandomBoolean(), csvPrinter, file);
+                } else if (processingMethod == 2) {
+                    collectDataForFile(iterations, getNeuralNetworkChoice(), csvPrinter, file);
+                }
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -177,5 +188,16 @@ public class DataCollectionWorker extends Worker {
         results.add("" + useCloud);
 
         return results;
+    }
+
+    private boolean getRandomBoolean() {
+        Random random = new Random();
+        return random.nextBoolean();
+    }
+
+    private boolean getNeuralNetworkChoice() {
+        // TODO
+
+        return true;
     }
 }
