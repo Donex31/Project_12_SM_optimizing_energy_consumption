@@ -3,7 +3,10 @@ package pl.edu.agh.sm.project12.datacollection;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
@@ -65,12 +68,17 @@ public class StartDataCollectionActivity extends AppCompatActivity {
         boolean useCloud = this.useCloud.isChecked();
         int processingMethod  = this.picker.getValue();
 
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        //we are connected to a network
+        boolean isWiFiConnected = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI).getState() == NetworkInfo.State.CONNECTED;
+
         Intent intent = new Intent(this, ResultDataCollectionActivity.class);
         intent.putExtra("name", name);
         intent.putExtra("iterations", iterations);
         intent.putExtra("images_directory", imagesDirectory.getAbsolutePath());
         intent.putExtra("useCloud", useCloud);
         intent.putExtra("processingMethod", processingMethod);
+        intent.putExtra("wifi", isWiFiConnected);
         startActivity(intent);
     }
 }

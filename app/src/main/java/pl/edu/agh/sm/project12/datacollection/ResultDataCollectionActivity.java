@@ -63,12 +63,14 @@ public class ResultDataCollectionActivity extends AppCompatActivity {
         String imagesDirPath = data.getStringExtra("images_directory");
         boolean useCloud = data.getBooleanExtra("useCloud", false);
         int processingMethod = data.getIntExtra("processingMethod", 0);
+        boolean isWiFiConnected = data.getBooleanExtra("isWiFiConnected", false);
 
         startDataCollection(TaskData.builder()
                 .id(UUID.randomUUID().toString())
                 .name(name)
                 .iterations(iterations)
                 .useCloud(useCloud)
+                .isWiFiConnected(isWiFiConnected)
                 .processingMethod(processingMethod)
                 .progress(0d)
                 .imagesDirPath(imagesDirPath)
@@ -88,6 +90,7 @@ public class ResultDataCollectionActivity extends AppCompatActivity {
                 .putInt(DataCollectionWorker.KEY_ITERATIONS, data.getIterations())
                 .putString(DataCollectionWorker.KEY_IMAGES_DIR, data.getImagesDirPath())
                 .putBoolean(DataCollectionWorker.KEY_CLOUD, data.useCloud)
+                .putBoolean(DataCollectionWorker.KEY_WIFI, data.isWiFiConnected)
                 .putInt(DataCollectionWorker.KEY_PROCESSING_METHOD, data.processingMethod)
                 .build();
         WorkContinuation workContinuation = WorkManager.getInstance(getApplicationContext())
@@ -152,5 +155,6 @@ public class ResultDataCollectionActivity extends AppCompatActivity {
         private double progress;
         private String imagesDirPath;
         private int processingMethod;
+        private boolean isWiFiConnected;
     }
 }
