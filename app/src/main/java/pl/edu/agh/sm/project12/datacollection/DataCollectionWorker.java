@@ -23,6 +23,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -31,7 +32,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import pl.edu.agh.sm.project12.MainActivity;
 import pl.edu.agh.sm.project12.battery.BatteryConsumptionListener;
@@ -40,6 +40,17 @@ import pl.edu.agh.sm.project12.cloudocr.TextRecognitionCloudOcr;
 import pl.edu.agh.sm.project12.ocr.TextRecognitionOcr;
 
 import static android.content.Context.BATTERY_SERVICE;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
+
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
 
@@ -99,7 +110,7 @@ public class DataCollectionWorker extends Worker {
                 } else if (processingMethod == 1) {
                     collectDataForFile(iterations, getRandomBoolean(), csvPrinter, file);
                 } else if (processingMethod == 2) {
-                    collectDataForFile(iterations, getNeuralNetworkChoice(), csvPrinter, file);
+                    collectDataForFile(iterations, getNeuralNetworkChoice(file), csvPrinter, file);
                 }
             }
         } catch (IOException e) {
@@ -195,9 +206,40 @@ public class DataCollectionWorker extends Worker {
         return random.nextBoolean();
     }
 
-    private boolean getNeuralNetworkChoice() {
-        // TODO
+    private boolean getNeuralNetworkChoice(File file){
 
-        return true;
+        Log.w(TAG, "Run Neural Network for: " + file.getName());
+
+        Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
+        String width = Integer.toString(bitmap.getWidth());
+        String height = Integer.toString(bitmap.getHeight());
+        String image_size = Long.toString(file.length());
+
+
+        HttpClient httpClient = new DefaultHttpClient();
+        HttpPost httpPost = new HttpPost("https://us-central1-optimizingenergyconsumption.cloudfunctions.net/startInCloudPredictor");
+        List<NameValuePair> params = new ArrayList<>();
+        params.add(new BasicNameValuePair("width", width));
+        params.add(new BasicNameValuePair("height", height));
+        params.add(new BasicNameValuePair("image_size", image_size));
+        params.add(new BasicNameValuePair("wifi", "1.0"));
+        try {
+            httpPost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        try {
+            HttpResponse response = httpClient.execute(httpPost);
+            HttpEntity respEntity = response.getEntity();
+
+            if (respEntity != null) {
+                String content =  EntityUtils.toString(respEntity);
+                return content.equals("true");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return false;
     }
 }
