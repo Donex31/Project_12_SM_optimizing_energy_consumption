@@ -3,6 +3,10 @@ package pl.edu.agh.sm.project12.datacollection;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.os.BatteryManager;
 import android.util.Log;
 import android.view.Surface;
@@ -13,6 +17,8 @@ import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
 import com.google.android.gms.tasks.Task;
+import com.google.common.util.concurrent.UncheckedExecutionException;
+import com.google.gson.Gson;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.text.Text;
 
@@ -47,10 +53,13 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
 
@@ -63,6 +72,7 @@ public class DataCollectionWorker extends Worker {
     public static final String KEY_IMAGES_DIR = "images_directory";
     public static final String KEY_CLOUD = "useCloud";
     public static final String KEY_PROCESSING_METHOD = "processingMethod";
+    public static final String KEY_WIFI = "isWiFiConnected";
 
     private static final String[] CSV_HEADERS = {
             "image", // file name
@@ -91,9 +101,9 @@ public class DataCollectionWorker extends Worker {
 
         int iterations = inputData.getInt(KEY_ITERATIONS, 0);
         String fileName = inputData.getString(KEY_NAME) + CSV_EXT;
-        boolean isCloud = inputData.getBoolean(KEY_CLOUD, false);
         int processingMethod = inputData.getInt(KEY_PROCESSING_METHOD, 0);
         String imagesDirPath = inputData.getString(KEY_IMAGES_DIR);
+        boolean wifi = inputData.getBoolean(KEY_WIFI, true);
 
         File appFilesDir = getApplicationContext().getFilesDir();
         Log.i(TAG, "File directory: " + appFilesDir.getAbsolutePath());
@@ -110,12 +120,21 @@ public class DataCollectionWorker extends Worker {
                 } else if (processingMethod == 1) {
                     collectDataForFile(iterations, getRandomBoolean(), csvPrinter, file);
                 } else if (processingMethod == 2) {
-                    collectDataForFile(iterations, getNeuralNetworkChoice(file), csvPrinter, file);
+                    collectDataForFile(iterations, getNeuralNetworkChoice(file, "KNN", wifi), csvPrinter, file);
+                } else if (processingMethod == 3) {
+                    collectDataForFile(iterations, getNeuralNetworkChoice(file, "HBOS", wifi), csvPrinter, file);
+                } else if (processingMethod == 4) {
+                    collectDataForFile(iterations, getNeuralNetworkChoice(file, "CBLOF", wifi), csvPrinter, file);
+                } else if (processingMethod == 5) {
+                    collectDataForFile(iterations, getNeuralNetworkChoice(file, "IFOREST", wifi), csvPrinter, file);
                 }
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        } catch (JSONException e) {
+            throw new UncheckedExecutionException(e);
         }
+
 
         return Result.success();
     }
@@ -206,7 +225,7 @@ public class DataCollectionWorker extends Worker {
         return random.nextBoolean();
     }
 
-    private boolean getNeuralNetworkChoice(File file){
+    private boolean getNeuralNetworkChoice(File file, String anomalyPredictor, boolean wifi) throws JSONException {
 
         Log.w(TAG, "Run Neural Network for: " + file.getName());
 
@@ -215,16 +234,23 @@ public class DataCollectionWorker extends Worker {
         String height = Integer.toString(bitmap.getHeight());
         String image_size = Long.toString(file.length());
 
-
         HttpClient httpClient = new DefaultHttpClient();
         HttpPost httpPost = new HttpPost("https://us-central1-optimizingenergyconsumption.cloudfunctions.net/startInCloudPredictor");
-        List<NameValuePair> params = new ArrayList<>();
-        params.add(new BasicNameValuePair("width", width));
-        params.add(new BasicNameValuePair("height", height));
-        params.add(new BasicNameValuePair("image_size", image_size));
-        params.add(new BasicNameValuePair("wifi", "1.0"));
+
+        String content = "";
+        String jsonString = new JSONObject()
+                .put("width", width)
+                .put("height", height)
+                .put("image_size", image_size)
+                .put("wifi", wifi)
+                .put("model", anomalyPredictor)
+                .toString();
+
         try {
-            httpPost.setEntity(new UrlEncodedFormEntity(params, "UTF-8"));
+            StringEntity entity = new StringEntity(jsonString);
+            httpPost.setEntity(entity);
+            httpPost.setHeader("Accept", "application/json");
+            httpPost.setHeader("Content-type", "application/json");
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
@@ -233,13 +259,14 @@ public class DataCollectionWorker extends Worker {
             HttpEntity respEntity = response.getEntity();
 
             if (respEntity != null) {
-                String content =  EntityUtils.toString(respEntity);
-                return content.equals("true");
+               content = EntityUtils.toString(respEntity);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        return false;
+        JSONObject jsonObject = new JSONObject(content);
+
+        return jsonObject.getBoolean("result");
     }
 }
