@@ -108,6 +108,7 @@ public class DataCollectionWorker extends AsyncTask<ResultDataCollectionActivity
         String imagesDirPath = inputData.getImagesDirPath();
         fileCount = new File(imagesDirPath).listFiles().length;
         boolean wifi = inputData.isWiFiConnected();
+        int processingMethod = inputData.getProcessingMethod();
 
         File appFilesDir = appContext.getFilesDir();
         Log.i(TAG, "File directory: " + appFilesDir.getAbsolutePath());
