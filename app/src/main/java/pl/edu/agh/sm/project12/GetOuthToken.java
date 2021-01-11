@@ -3,25 +3,22 @@ package pl.edu.agh.sm.project12;
 import android.accounts.Account;
 import android.app.Activity;
 import android.os.AsyncTask;
+import android.widget.Toast;
 
 import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
-import com.google.android.gms.auth.UserRecoverableAuthException;
 
 import java.io.IOException;
 
 class GetOAuthToken extends AsyncTask<Void, Void, Void> {
-    public static String accessToken;
     Activity mActivity;
     Account mAccount;
-    int mRequestCode;
     String mScope;
 
-    GetOAuthToken(Activity activity, Account account, String scope, int requestCode) {
+    GetOAuthToken(Activity activity, Account account, String scope) {
         this.mActivity = activity;
         this.mScope = scope;
         this.mAccount = account;
-        this.mRequestCode = requestCode;
     }
 
     @Override
@@ -30,6 +27,8 @@ class GetOAuthToken extends AsyncTask<Void, Void, Void> {
             String token = fetchToken();
             if (token != null) {
                 MainActivity.accessToken = token;
+                mActivity.runOnUiThread(() -> Toast.makeText(mActivity,
+                        "Token: " + MainActivity.accessToken, Toast.LENGTH_SHORT).show());
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -41,14 +40,11 @@ class GetOAuthToken extends AsyncTask<Void, Void, Void> {
         String accessToken;
         try {
             accessToken = GoogleAuthUtil.getToken(mActivity, mAccount, mScope);
-            GoogleAuthUtil.clearToken (mActivity, accessToken);
+            GoogleAuthUtil.clearToken(mActivity, accessToken);
             accessToken = GoogleAuthUtil.getToken(mActivity, mAccount, mScope);
             return accessToken;
-        } catch (UserRecoverableAuthException userRecoverableException) {
-            mActivity.startActivityForResult(userRecoverableException.getIntent(), mRequestCode);
-        } catch (GoogleAuthException fatalException) {
-            fatalException.printStackTrace();
+        } catch (GoogleAuthException e) {
+            throw new RuntimeException(e);
         }
-        return null;
     }
 }

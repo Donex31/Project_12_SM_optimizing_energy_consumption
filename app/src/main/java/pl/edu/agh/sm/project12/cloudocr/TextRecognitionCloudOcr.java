@@ -39,64 +39,53 @@ public class TextRecognitionCloudOcr {
         this.accessToken = accessToken;
     }
 
-    public void performCloudVisionRequest(Bitmap bitmap, Runnable onFinish) {
+    public void performCloudVisionRequest(Bitmap bitmap) {
         if (bitmap != null) {
-            callCloudVision(bitmap, onFinish);
+            callCloudVision(bitmap);
         }
     }
 
     @SuppressLint("StaticFieldLeak")
-    private void callCloudVision(final Bitmap bitmap, Runnable onFinish) {
-        new AsyncTask<Object, Void, BatchAnnotateImagesResponse>() {
-            @Override
-            protected BatchAnnotateImagesResponse doInBackground(Object... params) {
-                try {
-                    GoogleCredential credential = new GoogleCredential().setAccessToken(accessToken);
-                    HttpTransport httpTransport = AndroidHttp.newCompatibleTransport();
-                    JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
+    private BatchAnnotateImagesResponse callCloudVision(final Bitmap bitmap) {
+        try {
+            GoogleCredential credential = new GoogleCredential().setAccessToken(accessToken);
+            HttpTransport httpTransport = AndroidHttp.newCompatibleTransport();
+            JsonFactory jsonFactory = GsonFactory.getDefaultInstance();
 
-                    Vision.Builder builder = new Vision.Builder
-                            (httpTransport, jsonFactory, credential);
-                    Vision vision = builder.build();
+            Vision.Builder builder = new Vision.Builder
+                    (httpTransport, jsonFactory, credential);
+            Vision vision = builder.build();
 
-                    List<Feature> featureList = new ArrayList<>();
+            List<Feature> featureList = new ArrayList<>();
 
-                    Feature textDetection = new Feature();
-                    textDetection.setType("TEXT_DETECTION");
-                    textDetection.setMaxResults(10);
-                    featureList.add(textDetection);
+            Feature textDetection = new Feature();
+            textDetection.setType("TEXT_DETECTION");
+            textDetection.setMaxResults(10);
+            featureList.add(textDetection);
 
-                    List<AnnotateImageRequest> imageList = new ArrayList<>();
-                    AnnotateImageRequest annotateImageRequest = new AnnotateImageRequest();
-                    Image base64EncodedImage = getBase64EncodedJpeg(bitmap);
-                    annotateImageRequest.setImage(base64EncodedImage);
-                    annotateImageRequest.setFeatures(featureList);
-                    imageList.add(annotateImageRequest);
+            List<AnnotateImageRequest> imageList = new ArrayList<>();
+            AnnotateImageRequest annotateImageRequest = new AnnotateImageRequest();
+            Image base64EncodedImage = getBase64EncodedJpeg(bitmap);
+            annotateImageRequest.setImage(base64EncodedImage);
+            annotateImageRequest.setFeatures(featureList);
+            imageList.add(annotateImageRequest);
 
-                    BatchAnnotateImagesRequest batchAnnotateImagesRequest =
-                            new BatchAnnotateImagesRequest();
-                    batchAnnotateImagesRequest.setRequests(imageList);
+            BatchAnnotateImagesRequest batchAnnotateImagesRequest =
+                    new BatchAnnotateImagesRequest();
+            batchAnnotateImagesRequest.setRequests(imageList);
 
-                    Vision.Images.Annotate annotateRequest =
-                            vision.images().annotate(batchAnnotateImagesRequest);
-                    annotateRequest.setDisableGZipContent(true);
-                    Log.d(TAG, "Sending request to Google Cloud");
+            Vision.Images.Annotate annotateRequest =
+                    vision.images().annotate(batchAnnotateImagesRequest);
+            annotateRequest.setDisableGZipContent(true);
+            Log.d(TAG, "Sending request to Google Cloud");
 
-                    return annotateRequest.execute();
-
-                } catch (GoogleJsonResponseException e) {
-                    Log.e(TAG, "Request error: " + e.getContent());
-                } catch (IOException e) {
-                    Log.d(TAG, "Request error: " + e.getMessage());
-                }
-                onFinish.run();
-                return null;
-            }
-
-            protected void onPostExecute(BatchAnnotateImagesResponse response) {
-                Log.d(TAG, "Recognized text: " + getDetectedTexts(response));
-            }
-        }.execute();
+            return annotateRequest.execute();
+        } catch (GoogleJsonResponseException e) {
+            Log.e(TAG, "Request error: " + e.getContent());
+        } catch (IOException e) {
+            Log.d(TAG, "Request error: " + e.getMessage());
+        }
+        return null;
     }
 
     private String getDetectedTexts(BatchAnnotateImagesResponse response) {

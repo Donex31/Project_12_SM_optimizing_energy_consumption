@@ -34,7 +34,6 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     static final int REQUEST_CODE_PICK_ACCOUNT = 101;
-    static final int REQUEST_ACCOUNT_AUTHORIZATION = 102;
     static final int REQUEST_PERMISSIONS = 13;
 
     public static String accessToken;
@@ -132,14 +131,6 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this, "No Account Selected", Toast.LENGTH_SHORT)
                         .show();
             }
-        } else if (requestCode == REQUEST_ACCOUNT_AUTHORIZATION) {
-            if (resultCode == RESULT_OK) {
-                Bundle extra = data.getExtras();
-                onTokenReceived(extra.getString("authtoken"));
-            } else if (resultCode == RESULT_CANCELED) {
-                Toast.makeText(this, "Authorization Failed", Toast.LENGTH_SHORT)
-                        .show();
-            }
         }
     }
 
@@ -155,14 +146,9 @@ public class MainActivity extends AppCompatActivity {
         if (mAccount == null) {
             pickUserAccount();
         } else {
-            new GetOAuthToken(MainActivity.this, mAccount, SCOPE, REQUEST_ACCOUNT_AUTHORIZATION)
+            new GetOAuthToken(MainActivity.this, mAccount, SCOPE)
                     .execute();
         }
-    }
-
-    public void onTokenReceived(String token) {
-        accessToken = token;
-        textView.setText("Authorization was successful!!!");
     }
 
     public void openDataCollectionActivity(View view) {

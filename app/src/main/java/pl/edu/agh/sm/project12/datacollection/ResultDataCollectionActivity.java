@@ -85,31 +85,9 @@ public class ResultDataCollectionActivity extends AppCompatActivity {
 
     private void startDataCollection(TaskData data) {
         int fileCount = new File(data.getImagesDirPath()).listFiles().length;
-        Data inputData = new Data.Builder()
-                .putString(DataCollectionWorker.KEY_NAME, data.getName())
-                .putInt(DataCollectionWorker.KEY_ITERATIONS, data.getIterations())
-                .putString(DataCollectionWorker.KEY_IMAGES_DIR, data.getImagesDirPath())
-                .putBoolean(DataCollectionWorker.KEY_CLOUD, data.useCloud)
-                .putBoolean(DataCollectionWorker.KEY_WIFI, data.isWiFiConnected)
-                .putInt(DataCollectionWorker.KEY_PROCESSING_METHOD, data.processingMethod)
-                .build();
-        WorkContinuation workContinuation = WorkManager.getInstance(getApplicationContext())
-                .beginWith(new OneTimeWorkRequest.Builder(DataCollectionWorker.class)
-                        .setInputData(inputData)
-                        .build());
-        workContinuation.enqueue();
-        workContinuation.getWorkInfosLiveData()
-                .observe(this, workInfos -> {
-                    WorkInfo workInfo = workInfos.get(0);
-                    boolean finished = workInfo.getState().isFinished();
-                    if (finished) {
-                        data.setProgress(data.getIterations());
-                    } else {
-                        int progress = workInfo.getProgress().getInt(DataCollectionWorker.KEY_PROGRESS, 0);
-                        data.setProgress(1d * progress / fileCount / data.iterations);
-                    }
-                    dataCollectionTaskListAdapter.notifyDataSetChanged();
-                });
+        new DataCollectionWorker(getApplicationContext(), progress -> {
+            data.setProgress(1d * progress / fileCount / data.iterations);
+        }).execute(data);
 
         taskIds.add(data.getId());
         tasks.put(data.getId(), data);
@@ -147,7 +125,7 @@ public class ResultDataCollectionActivity extends AppCompatActivity {
     @Builder
     @AllArgsConstructor
     @NoArgsConstructor
-    private static class TaskData {
+    public static class TaskData {
         private String id;
         private String name;
         private int iterations;

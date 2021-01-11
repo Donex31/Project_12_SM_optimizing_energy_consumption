@@ -3,6 +3,7 @@ package pl.edu.agh.sm.project12.datacollection;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
@@ -10,11 +11,6 @@ import android.net.wifi.WifiManager;
 import android.os.BatteryManager;
 import android.util.Log;
 import android.view.Surface;
-
-import androidx.annotation.NonNull;
-import androidx.work.Data;
-import androidx.work.Worker;
-import androidx.work.WorkerParameters;
 
 import com.google.android.gms.tasks.Task;
 import com.google.common.util.concurrent.UncheckedExecutionException;
@@ -35,9 +31,12 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Consumer;
 
 import pl.edu.agh.sm.project12.MainActivity;
 import pl.edu.agh.sm.project12.battery.BatteryConsumptionListener;
@@ -63,7 +62,7 @@ import org.json.JSONObject;
 import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
 
-public class DataCollectionWorker extends Worker {
+public class DataCollectionWorker extends AsyncTask<ResultDataCollectionActivity.TaskData, Void, Void> {
     private static final String TAG = DataCollectionWorker.class.getSimpleName();
 
     public static final String KEY_ITERATIONS = "iterations";
@@ -85,27 +84,32 @@ public class DataCollectionWorker extends Worker {
     };
     private static final String CSV_EXT = ".csv";
 
-    private final WorkerParameters workerParams;
     private int iterationCounter = 0;
+    private final BatteryManager batteryManager;
+    private Context appContext;
+    private Consumer<Integer> progress;
+    private int fileCount;
 
-    public DataCollectionWorker(Context appContext, WorkerParameters workerParams) {
-        super(appContext, workerParams);
-        this.workerParams = workerParams;
-        setProgressAsync(new Data.Builder().putInt(KEY_PROGRESS, 0).build());
+    public DataCollectionWorker(Context appContext, Consumer<Integer> progress) {
+        batteryManager = (BatteryManager) appContext.getSystemService(BATTERY_SERVICE);
+        this.appContext = appContext;
+        this.progress = progress;
+        progress.accept(0);
+
     }
 
-    @NonNull
     @Override
-    public Result doWork() {
-        Data inputData = workerParams.getInputData();
+    protected Void doInBackground(ResultDataCollectionActivity.TaskData... data) {
+        ResultDataCollectionActivity.TaskData inputData = data[0];
 
-        int iterations = inputData.getInt(KEY_ITERATIONS, 0);
-        String fileName = inputData.getString(KEY_NAME) + CSV_EXT;
-        int processingMethod = inputData.getInt(KEY_PROCESSING_METHOD, 0);
-        String imagesDirPath = inputData.getString(KEY_IMAGES_DIR);
-        boolean wifi = inputData.getBoolean(KEY_WIFI, true);
+        int iterations = inputData.getIterations();
+        String fileName = "results-" + System.currentTimeMillis() + CSV_EXT;
+        boolean isCloud = inputData.isUseCloud();
+        String imagesDirPath = inputData.getImagesDirPath();
+        fileCount = new File(imagesDirPath).listFiles().length;
+        boolean wifi = inputData.isWiFiConnected();
 
-        File appFilesDir = getApplicationContext().getFilesDir();
+        File appFilesDir = appContext.getFilesDir();
         Log.i(TAG, "File directory: " + appFilesDir.getAbsolutePath());
         File imagesDir = new File(imagesDirPath);
         Log.i(TAG, "Starting data collection, " + iterations + " iterations");
@@ -113,7 +117,9 @@ public class DataCollectionWorker extends Worker {
         try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(new File(appFilesDir, fileName).getAbsolutePath()));
              CSVPrinter csvPrinter = new CSVPrinter(writer, CSVFormat.DEFAULT.withHeader(CSV_HEADERS))) {
             iterationCounter = 0;
-            for (File file : imagesDir.listFiles()) {
+            List<File> files = new ArrayList<>(Arrays.asList(imagesDir.listFiles()));
+            Collections.shuffle(files);
+            for (File file : files) {
                 if (processingMethod == 0) {
                     collectDataForFile(iterations, false, csvPrinter, file);
                     collectDataForFile(iterations, true, csvPrinter, file);
@@ -136,29 +142,31 @@ public class DataCollectionWorker extends Worker {
         }
 
 
-        return Result.success();
+        return null;
     }
 
     private void collectDataForFile(int iterations, boolean isCloud, CSVPrinter csvPrinter, File file) throws IOException {
-        Log.i(TAG, "file: " + file.getName() + ", cloud: " + isCloud);
+        Log.d(TAG, "file: " + file.getName() + ", cloud: " + isCloud);
         for (int i = 0; i < iterations; ++i) {
-            Log.i(TAG, "Data collection, iteration " + i);
+            Log.d(TAG, "iteration " + i);
             List<String> record = performIteration(file, isCloud);
             if (!record.isEmpty()) {
                 csvPrinter.printRecord(record);
                 csvPrinter.flush();
             }
-            setProgressAsync(new Data.Builder().putInt(KEY_PROGRESS, ++iterationCounter).build());
+            ++iterationCounter;
+            Log.i(TAG, "Progress " + iterationCounter + "/" + (2 * fileCount * iterations));
+            progress.accept(iterationCounter);
         }
     }
 
     private final TextRecognitionOcr recognizer = new TextRecognitionOcr();
+
     private final TextRecognitionCloudOcr cloudRecognizer = new TextRecognitionCloudOcr(MainActivity.accessToken);
 
     private List<String> performIteration(File image, boolean useCloud) {
         List<String> results = new ArrayList<>(4);
 
-        BatteryManager batteryManager = (BatteryManager) getApplicationContext().getSystemService(BATTERY_SERVICE);
         Duration samplingPeriod = Duration.ofMillis(50);
         BatteryConsumptionMonitor batteryConsumptionMonitor = new BatteryConsumptionMonitor(batteryManager, samplingPeriod);
         batteryConsumptionMonitor.setListener(new BatteryConsumptionListener() {
@@ -189,9 +197,7 @@ public class DataCollectionWorker extends Worker {
             Instant start = Instant.now();
 
             if (useCloud) {
-                CountDownLatch latch = new CountDownLatch(1);
-                cloudRecognizer.performCloudVisionRequest(bitmap, latch::countDown);
-                latch.await();
+                cloudRecognizer.performCloudVisionRequest(bitmap);
             } else {
                 Task<Text> process = recognizer.process(inputImage);
                 CountDownLatch latch = new CountDownLatch(1);
