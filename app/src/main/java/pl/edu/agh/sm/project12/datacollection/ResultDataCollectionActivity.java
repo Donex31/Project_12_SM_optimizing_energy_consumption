@@ -63,7 +63,7 @@ public class ResultDataCollectionActivity extends AppCompatActivity {
         String imagesDirPath = data.getStringExtra("images_directory");
         boolean useCloud = data.getBooleanExtra("useCloud", false);
         int processingMethod = data.getIntExtra("processingMethod", 0);
-        boolean isWiFiConnected = data.getBooleanExtra("isWiFiConnected", false);
+        boolean isWiFiConnected = data.getBooleanExtra("wifi", false);
 
         startDataCollection(TaskData.builder()
                 .id(UUID.randomUUID().toString())
@@ -87,6 +87,7 @@ public class ResultDataCollectionActivity extends AppCompatActivity {
         int fileCount = new File(data.getImagesDirPath()).listFiles().length;
         new DataCollectionWorker(getApplicationContext(), progress -> {
             data.setProgress(1d * progress / fileCount / data.iterations);
+            runOnUiThread(() -> dataCollectionTaskListAdapter.notifyDataSetChanged());
         }).execute(data);
 
         taskIds.add(data.getId());

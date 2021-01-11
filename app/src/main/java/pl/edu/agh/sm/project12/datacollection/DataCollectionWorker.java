@@ -39,6 +39,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.function.Consumer;
 
 import pl.edu.agh.sm.project12.MainActivity;
+import pl.edu.agh.sm.project12.Power;
 import pl.edu.agh.sm.project12.battery.BatteryConsumptionListener;
 import pl.edu.agh.sm.project12.battery.BatteryConsumptionMonitor;
 import pl.edu.agh.sm.project12.cloudocr.TextRecognitionCloudOcr;
@@ -81,6 +82,7 @@ public class DataCollectionWorker extends AsyncTask<ResultDataCollectionActivity
             "energy", // battery consumption (mAh)
             "image_size", // image size (bytes)
             "cloud", // whether it's cloud (boolean)
+            "wifi", // whether wifi is connected (boolean)
     };
     private static final String CSV_EXT = ".csv";
 
@@ -122,18 +124,18 @@ public class DataCollectionWorker extends AsyncTask<ResultDataCollectionActivity
             Collections.shuffle(files);
             for (File file : files) {
                 if (processingMethod == 0) {
-                    collectDataForFile(iterations, false, csvPrinter, file);
-                    collectDataForFile(iterations, true, csvPrinter, file);
+                    collectDataForFile(wifi, iterations, false, csvPrinter, file);
+                    collectDataForFile(wifi, iterations, true, csvPrinter, file);
                 } else if (processingMethod == 1) {
-                    collectDataForFile(iterations, getRandomBoolean(), csvPrinter, file);
+                    collectDataForFile(wifi, iterations, getRandomBoolean(), csvPrinter, file);
                 } else if (processingMethod == 2) {
-                    collectDataForFile(iterations, getNeuralNetworkChoice(file, "KNN", wifi), csvPrinter, file);
+                    collectDataForFile(wifi, iterations, getNeuralNetworkChoice(file, "KNN", wifi), csvPrinter, file);
                 } else if (processingMethod == 3) {
-                    collectDataForFile(iterations, getNeuralNetworkChoice(file, "HBOS", wifi), csvPrinter, file);
+                    collectDataForFile(wifi, iterations, getNeuralNetworkChoice(file, "HBOS", wifi), csvPrinter, file);
                 } else if (processingMethod == 4) {
-                    collectDataForFile(iterations, getNeuralNetworkChoice(file, "CBLOF", wifi), csvPrinter, file);
+                    collectDataForFile(wifi, iterations, getNeuralNetworkChoice(file, "CBLOF", wifi), csvPrinter, file);
                 } else if (processingMethod == 5) {
-                    collectDataForFile(iterations, getNeuralNetworkChoice(file, "IFOREST", wifi), csvPrinter, file);
+                    collectDataForFile(wifi, iterations, getNeuralNetworkChoice(file, "IFOREST", wifi), csvPrinter, file);
                 }
             }
         } catch (IOException e) {
@@ -146,17 +148,17 @@ public class DataCollectionWorker extends AsyncTask<ResultDataCollectionActivity
         return null;
     }
 
-    private void collectDataForFile(int iterations, boolean isCloud, CSVPrinter csvPrinter, File file) throws IOException {
+    private void collectDataForFile(boolean wifi, int iterations, boolean isCloud, CSVPrinter csvPrinter, File file) throws IOException {
         Log.d(TAG, "file: " + file.getName() + ", cloud: " + isCloud);
         for (int i = 0; i < iterations; ++i) {
             Log.d(TAG, "iteration " + i);
-            List<String> record = performIteration(file, isCloud);
+            List<String> record = performIteration(wifi, file, isCloud);
             if (!record.isEmpty()) {
                 csvPrinter.printRecord(record);
                 csvPrinter.flush();
             }
             ++iterationCounter;
-            Log.i(TAG, "Progress " + iterationCounter + "/" + (2 * fileCount * iterations));
+            Log.i(TAG, "Progress " + iterationCounter + "/" + (fileCount * iterations));
             progress.accept(iterationCounter);
         }
     }
@@ -165,7 +167,7 @@ public class DataCollectionWorker extends AsyncTask<ResultDataCollectionActivity
 
     private final TextRecognitionCloudOcr cloudRecognizer = new TextRecognitionCloudOcr(MainActivity.accessToken);
 
-    private List<String> performIteration(File image, boolean useCloud) {
+    private List<String> performIteration(boolean wifi, File image, boolean useCloud) {
         List<String> results = new ArrayList<>(4);
 
         Duration samplingPeriod = Duration.ofMillis(50);
@@ -223,6 +225,7 @@ public class DataCollectionWorker extends AsyncTask<ResultDataCollectionActivity
         // in bytes
         results.add("" + image.length());
         results.add("" + useCloud);
+        results.add("" + wifi);
 
         return results;
     }
