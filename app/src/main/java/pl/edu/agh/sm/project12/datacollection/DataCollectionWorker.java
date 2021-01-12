@@ -136,6 +136,8 @@ public class DataCollectionWorker extends AsyncTask<ResultDataCollectionActivity
                     collectDataForFile(wifi, iterations, getNeuralNetworkChoice(file, "CBLOF", wifi), csvPrinter, file);
                 } else if (processingMethod == 5) {
                     collectDataForFile(wifi, iterations, getNeuralNetworkChoice(file, "IFOREST", wifi), csvPrinter, file);
+                } else if (processingMethod == 6) {
+                    collectDataForFile(wifi, iterations, getNeuralNetworkChoice(file, "REAL", wifi), csvPrinter, file);
                 }
             }
         } catch (IOException e) {

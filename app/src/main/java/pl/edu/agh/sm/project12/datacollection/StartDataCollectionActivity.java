@@ -56,9 +56,9 @@ public class StartDataCollectionActivity extends AppCompatActivity {
 
         picker = findViewById(R.id.numberPicker);
         picker.setDisplayedValues( new String[] { "Switch", "Random", "Neural-Network-KNN",
-                "Neural-Network-HBOS", "Neural-Network-CBLOF", "Neural-Network-IFOREST" } );
+                "Neural-Network-HBOS", "Neural-Network-CBLOF", "Neural-Network-IFOREST", "Without-Anomaly-Predictor" } );
         picker.setMinValue(0);
-        picker.setMaxValue(5);
+        picker.setMaxValue(6);
     }
 
     public void start(View view) {
